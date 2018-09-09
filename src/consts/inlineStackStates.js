@@ -1,0 +1,7 @@
+const INLINE_STACK_STATES = {
+  OPEN: 1,
+  CLOSED: 2,
+  INTERCEPTED: 3,
+}
+
+module.exports = INLINE_STACK_STATES

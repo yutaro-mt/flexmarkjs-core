@@ -1,0 +1,28 @@
+const Pd = {
+  '\u002D': true,
+  '\u058A': true,
+  '\u05BE': true,
+  '\u1400': true,
+  '\u1806': true,
+  '\u2010': true,
+  '\u2011': true,
+  '\u2012': true,
+  '\u2013': true,
+  '\u2014': true,
+  '\u2015': true,
+  '\u2E17': true,
+  '\u2E1A': true,
+  '\u2E3A': true,
+  '\u2E3B': true,
+  '\u2E40': true,
+  '\u301C': true,
+  '\u3030': true,
+  '\u30A0': true,
+  '\uFE31': true,
+  '\uFE32': true,
+  '\uFE58': true,
+  '\uFE63': true,
+  '\uFF0D': true,
+}
+
+module.exports = Pd
