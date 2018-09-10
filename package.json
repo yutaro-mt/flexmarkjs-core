@@ -20,9 +20,9 @@
     "eslint-config-prettier": "^3.0.1",
     "prettier": "1.14.2",
     "prettier-eslint": "^8.8.2",
+    "pegjs": "https://github.com/pegjs/pegjs.git",
     "prettier-eslint-cli": "^4.7.1"
   },
   "dependencies": {
-    "pegjs": "https://github.com/pegjs/pegjs.git"
   }
 }
