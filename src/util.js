@@ -1,8 +1,9 @@
 const INLINE_STACK_TYPES = require('./consts/inlineStackTypes')
 const INLINE_STACK_STATES = require('./consts/inlineStackStates')
+const NODE_TYPES = require('./consts/nodeTypes')
 
 class Util {
-  /* Invalid Unicode code points to \ufffd */
+  // Invalid Unicode code points to \ufffd
   static replaceUnicodeCodePoint(num) {
     return num > 0x10ffff || num == 0x00 ? 0xfffd : num
   }
@@ -118,7 +119,7 @@ class Util {
     const arr = items.reduce((acc, val) => {
       return acc.concat(val)
     }, [])
-    return 
+    return arr
   }
   static buildImageDesc(desc) {
     return desc.reduce((acc, val) => {
@@ -131,7 +132,7 @@ class Util {
       //unicode case fold
       //strip leading and trailing whitespace
       .trim()
-      //collapse consecutive internal whitespace to a single space.
+      //collapse consecutive internal whitespace to a single space
       .replace(/(\u0020|\u0009|\u000A|\u000B|\u000C|\u000D)+/, ' ')
     )
   }
@@ -167,6 +168,16 @@ class Util {
     }
     Util.popInlineStack(stack)
     return !hasNestedLink
+  }
+
+
+  
+  static isUnreadPrependingBQ(stack, currentPos){
+    for(let i=currentPos;i<stack.length ;i++){
+      if(stack[i].type == NODE_TYPES.BlockQuote)
+        return true
+    }
+    return false
   }
 }
 

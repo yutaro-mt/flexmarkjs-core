@@ -22,15 +22,6 @@
   const blockStack = (states&&states.blockStack) ? states.blockStack : [];
   const inlineStack = (states&&states.inlineStack) ? states.inlineStack : [];
 
-  function isUnreadPrependingBQ(currentPos){
-    for(let i=currentPos;i<blockStack.length ;i++){
-      if(blockStack[i].type == NODE_TYPES.BlockQuote)
-        return true;
-    }
-    return false;
-  }
-
-
   function buildEmphasis(open, blocks){
     let rem = open.length;
     const emphasis = blocks.reduce((acc, val)=>{
@@ -467,7 +458,7 @@ ListItemNormal
     !{ Util.changeListIndentStack(states.listIndentStack, head.length-1) }
     first:Block
     follow:( 
-      /*TODO tight判定要素 */
+      /*TODO tight */
       bl:(PartialPrependingMarkers blankLine)*
       !ThematicBreak
       PrependingMarkers
@@ -506,7 +497,7 @@ ListItemBeginWithICB
     !{ Util.changeListIndentStack(states.listIndentStack, head.length-1) }
     first:Block
     follow:(
-      /*TODO tight判定要素 */
+      /*TODO tight */
       bl:(PartialPrependingMarkers blankLine)*
       !ThematicBreak
       PrependingMarkers
@@ -541,7 +532,7 @@ ListItemBeginWithBlankline
       PrependingMarkers
       first:Block
       follow:(
-        /*TODO tight判定要素 */
+        /*TODO tight */
         bl:(PartialPrependingMarkers blankLine)*
         !ThematicBreak
         PrependingMarkers
@@ -591,7 +582,7 @@ OptionalListItemSpaces
 // ###############################################
 BQPartialPrependingMarkers
   = IndentationLoop
-    !{ return isUnreadPrependingBQ(states.currentBlockStackPos); }
+    !{ return Util.isUnreadPrependingBQ(blockStack, states.currentBlockStackPos); }
 PartialPrependingMarkers
   = IndentationLoop
 PrependingMarkers
@@ -1202,26 +1193,6 @@ TextualContent
       });
     }
 
-//gfm extension
-// -------------------- Autolink
-AutolinkExtension
-  = ExtendedWWWAutolink / ExtendedURLAutolink / ExtendedEmailAutolink
-ExtendedWWWAutolink
-  = ValidDomain
-ExtendedURLAutolink
-  = ('http' / 'https' / 'ftp')
-    '://'
-    ValidDomain
-ExtendedEmailAutolink // TODO
-  = (alphanumeric/[._+-])+
-    '@'
-    (alphanumeric/[_-])+
-    '.'
-    (  alphanumeric/[._-])+
-ValidDomain // TODO
-  = [a-z]i
-  / '_' / '-' / '.'
-alphanumeric = [a-z] // TODO
 // ###############################################
 // Preliminaries
 // ###############################################
@@ -1267,3 +1238,31 @@ UnicodePf = character:. &{ return Pf[character] }
 UnicodePi = character:. &{ return Pi[character] }
 UnicodePo = character:. &{ return Po[character] }
 UnicodePs = character:. &{ return Ps[character] }
+
+
+
+
+
+
+
+
+//gfm extension
+// -------------------- Autolink
+AutolinkExtension
+  = ExtendedWWWAutolink / ExtendedURLAutolink / ExtendedEmailAutolink
+ExtendedWWWAutolink
+  = ValidDomain
+ExtendedURLAutolink
+  = ('http' / 'https' / 'ftp')
+    '://'
+    ValidDomain
+ExtendedEmailAutolink // TODO
+  = (alphanumeric/[._+-])+
+    '@'
+    (alphanumeric/[_-])+
+    '.'
+    (  alphanumeric/[._-])+
+ValidDomain // TODO
+  = [a-z]i
+  / '_' / '-' / '.'
+alphanumeric = [a-z] // TODO
