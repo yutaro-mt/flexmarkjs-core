@@ -21,14 +21,16 @@ class ConstructionalVisitor extends VisitorBase {
       ]
     }
     return Array.isArray(node.children) ?
-      node.children.map(x => {
+      node.children.map((x,i) => {
         const children = ConstructionalVisitor.renderChildren(x, visitor)
         return children ?
           x.renderer({
+            index: i,
             node: x,
             children,
           }) :
           x.renderer({
+            index: i,
             node: x,
           })
       }) :
