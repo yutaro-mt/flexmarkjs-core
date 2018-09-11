@@ -245,11 +245,11 @@ function peg$parse(input, options) {
   "\t",
   "\v",
   "\f",
+  "www",
   "http",
   "https",
   "ftp",
   "://",
-  "@",
   "."
 ];
 var peg$regexps = [
@@ -274,11 +274,9 @@ var peg$regexps = [
   /^[ \t]/,
   /^[!"#$%&'()*+,-.\/:;<=>?@\^_`{|}\\~[\]]/,
   /^[\0-\x1F\x7F]/,
-  /^[._+\-]/,
-  /^[_\-]/,
-  /^[._\-]/,
-  /^[a-z]/i,
-  /^[a-z]/
+  /^[?!.,:*_~]/,
+  /^[^<]/,
+  /^[a-z]/i
 ];
 var peg$expectations = [
   peg$literalExpectation("-", false),
@@ -898,7 +896,11 @@ function(str) {return /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0
     function(character) { return Pf[character] },
     function(character) { return Pi[character] },
     function(character) { return Po[character] },
-    function(character) { return Ps[character] }
+    function(character) { return Ps[character] },
+    function(domain, c) {return c},
+    function(head, s, c) {return s+c},
+    function(head, inner, last) { return ( (!inner)&&/_/.test(head) )||( inner&&/_/.test(inner[inner.length-1]) ) },
+    function(head, inner, last) {return head + inner.join('') + last}
   ];
 
   var peg$bytecode = [
@@ -1057,11 +1059,10 @@ peg$decode("%7)2(\"!6(#/\xB7#%$%%F;\xAE.# &;\xA8G!.##&&!&'#/@#%;c.* &7\x884'\"!5
     peg$decode("%7#1\"!5!#/7#9:\xF4 ! -\"\"&!&#/#$+\")(\"'#&'#"),
     peg$decode("%7#1\"!5!#/7#9:\xF5 ! -\"\"&!&#/#$+\")(\"'#&'#"),
     peg$decode("%7#1\"!5!#/7#9:\xF6 ! -\"\"&!&#/#$+\")(\"'#&'#"),
-    peg$decode(";\xBE.) &;\xBC.# &;\xBD"),
-    peg$decode("%2\x8D\"!6\x8D#.3 &2\x8E\"!6\x8E#.( &2\x8F\"!6\x8F#/:#2\x90\"!6\x90#/,$;\xBE/#$+#)(#'#(\"'#&'#"),
-    peg$decode("%$;\xBF.( &45\"!5!#/1#0.*;\xBF.( &45\"!5!#&&&#/\x97#2\x91\"!6\x91#/\x89$$;\xBF.( &46\"!5!#/1#0.*;\xBF.( &46\"!5!#&&&#/]$2\x92\"!6\x92#/O$$;\xBF.( &47\"!5!#/1#0.*;\xBF.( &47\"!5!#&&&#/#$+%)(%'#($'#(#'#(\"'#&'#"),
-    peg$decode("48\"!5!#.> &2!\"!6!#.3 &2 \"!6 #.( &2\x92\"!6\x92#"),
-    peg$decode("49\"!5!#")
+    peg$decode(";\xBC.# &;\xBD"),
+    peg$decode("%2\x8D\"!6\x8D#/\xEA#;\xBE/\xE1$$%%F;\xAE.G &;\xA8.A &%45\"!5!#/2#;\xAE.# &;\xA8/#$+\")(\"'#&'#G!.##&&!&'#/6#46\"!5!#/($8\":\xF7#\"$ (\"'#&'#/z#0w*%%F;\xAE.G &;\xA8.A &%45\"!5!#/2#;\xAE.# &;\xA8/#$+\")(\"'#&'#G!.##&&!&'#/6#46\"!5!#/($8\":\xF7#\"$ (\"'#&'#&&&#/#$+#)(#'#(\"'#&'#"),
+    peg$decode("%2\x8E\"!6\x8E#.3 &2\x8F\"!6\x8F#.( &2\x90\"!6\x90#/:#2\x91\"!6\x91#/,$;\xBE/#$+#)(#'#(\"'#&'#"),
+    peg$decode("%%$47\"!5!#.3 &2!\"!6!#.( &2 \"!6 #/A#0>*47\"!5!#.3 &2!\"!6!#.( &2 \"!6 #&&&#/\"!&,)/\u0170#2\x92\"!6\x92#/\u0162$$%%$47\"!5!#.3 &2!\"!6!#.( &2 \"!6 #/A#0>*47\"!5!#.3 &2!\"!6!#.( &2 \"!6 #&&&#/\"!&,)/7#2\x92\"!6\x92#/)$8\":\xF8##%! (\"'#&'#/\x8E#0\x8B*%%$47\"!5!#.3 &2!\"!6!#.( &2 \"!6 #/A#0>*47\"!5!#.3 &2!\"!6!#.( &2 \"!6 #&&&#/\"!&,)/7#2\x92\"!6\x92#/)$8\":\xF8##%! (\"'#&'#&&&#/|$%$47\"!5!#.( &2 \"!6 #/6#03*47\"!5!#.( &2 \"!6 #&&&#/\"!&,)/?$9:\xF9 ##! -\"\"&#&!/)$8%:\xFA&#$\"!(%'#($'#(#'#(\"'#&'#")
   ];
 
   var peg$currPos = 0;
@@ -1560,6 +1561,7 @@ peg$decode("%7)2(\"!6(#/\xB7#%$%%F;\xAE.# &;\xA8G!.##&&!&'#/@#%;c.* &7\x884'\"!5
 
     function buildEmphasis(open, blocks){
       let rem = open.length;
+      const delimChar = open[0];
       const emphasis = blocks.reduce((acc, val)=>{
         let current = acc.concat(val.items);
         for(let i=val.closeSize; i>0; ){
@@ -1569,8 +1571,8 @@ peg$decode("%7)2(\"!6(#/\xB7#%$%%F;\xAE.# &;\xA8G!.##&&!&'#/@#%;c.* &7\x884'\"!5
                 {
                   type: NODE_TYPES.StrongEmphasis,
                   content: '',
-                  text: open[0]+open[0]+current.map(x=>x.text).join('')+
-                        open[0]+open[0],
+                  text: delimChar+delimChar+current.map(x=>x.text).join('')+
+                        delimChar+delimChar,
                   children: current,
                 }
               )
@@ -1583,7 +1585,7 @@ peg$decode("%7)2(\"!6(#/\xB7#%$%%F;\xAE.# &;\xA8G!.##&&!&'#/@#%;c.* &7\x884'\"!5
                 {
                   type: NODE_TYPES.Emphasis,
                   content: '',
-                  text: open[0]+current.map(x=>x.text).join('')+open[0],
+                  text: delimChar+current.map(x=>x.text).join('')+delimChar,
                   children: current,
                 }
               )

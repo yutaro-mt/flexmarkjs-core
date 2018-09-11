@@ -24,6 +24,7 @@
 
   function buildEmphasis(open, blocks){
     let rem = open.length;
+    const delimChar = open[0];
     const emphasis = blocks.reduce((acc, val)=>{
       let current = acc.concat(val.items);
       for(let i=val.closeSize; i>0; ){
@@ -33,8 +34,8 @@
               {
                 type: NODE_TYPES.StrongEmphasis,
                 content: '',
-                text: open[0]+open[0]+current.map(x=>x.text).join('')+
-                      open[0]+open[0],
+                text: delimChar+delimChar+current.map(x=>x.text).join('')+
+                      delimChar+delimChar,
                 children: current,
               }
             )
@@ -47,7 +48,7 @@
               {
                 type: NODE_TYPES.Emphasis,
                 content: '',
-                text: open[0]+current.map(x=>x.text).join('')+open[0],
+                text: delimChar+current.map(x=>x.text).join('')+delimChar,
                 children: current,
               }
             )
@@ -1246,23 +1247,46 @@ UnicodePs = character:. &{ return Ps[character] }
 
 
 
-//gfm extension
-// -------------------- Autolink
-AutolinkExtension
-  = ExtendedWWWAutolink / ExtendedURLAutolink / ExtendedEmailAutolink
+// ###############################################################
+// ####################### gfm extensions ########################
+// ###############################################################
+//GFMBlocks =
+
+GFMInlines
+  = GFMAutolink
+
+// -------------------- GFMStrikethrough
+
+// -------------------- GFMAutolink
+GFMAutolink
+  = ExtendedWWWAutolink / ExtendedURLAutolink/* / ExtendedEmailAutolink*/
 ExtendedWWWAutolink
-  = ValidDomain
+  = 'www'
+    domain:ValidDomain
+    follow:(
+      !(space
+      / lineEnding
+      / [?!.,:*_~] (space/lineEnding)
+     // / ')' (space/lineEnding) TODO
+      )
+      c:[^<]
+      {return c}
+    )+
 ExtendedURLAutolink
   = ('http' / 'https' / 'ftp')
     '://'
     ValidDomain
-ExtendedEmailAutolink // TODO
+    // TODO
+/*ExtendedEmailAutolink // TODO
   = (alphanumeric/[._+-])+
     '@'
     (alphanumeric/[_-])+
     '.'
-    (  alphanumeric/[._-])+
-ValidDomain // TODO
-  = [a-z]i
-  / '_' / '-' / '.'
-alphanumeric = [a-z] // TODO
+    (  alphanumeric/[._-])+*/
+ValidDomain
+  = head:$([a-z]i/'_'/'-')+
+    '.'
+    inner:(s:$([a-z]i/'_'/'-')+ c:'.' {return s+c})+
+    last:$([a-z]i/'-')+
+    !{ return ( (!inner)&&/_/.test(head) )||( inner&&/_/.test(inner[inner.length-1]) ) }
+    {return head + inner.join('') + last}

@@ -129,11 +129,11 @@ class Util {
   static normalizeLinkLabel(origin) {
     return (
       origin
-      //unicode case fold
-      //strip leading and trailing whitespace
-      .trim()
-      //collapse consecutive internal whitespace to a single space
-      .replace(/(\u0020|\u0009|\u000A|\u000B|\u000C|\u000D)+/, ' ')
+        //unicode case fold
+        //strip leading and trailing whitespace
+        .trim()
+        //collapse consecutive internal whitespace to a single space
+        .replace(/(\u0020|\u0009|\u000A|\u000B|\u000C|\u000D)+/, ' ')
     )
   }
 
