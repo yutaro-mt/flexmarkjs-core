@@ -26,7 +26,7 @@
     let rem = open.length;
     const delimChar = open[0];
     const emphasis = blocks.reduce((acc, val)=>{
-      let current = acc.concat(val.items);
+      let current = Util.joinCharacters(acc.concat(val.items),visitor);
       for(let i=val.closeSize; i>0; ){
         if(i>1){
           current = [
@@ -68,6 +68,7 @@
         })
       );
     }
+    Util.joinCharacters(texts,visitor)
     return texts.concat(emphasis);
   }
 }
@@ -621,9 +622,13 @@ ListItemIndentation
 Inlines
   = items:Inline*
     {
+      const inlines = items.reduce((acc,val)=>{
+            return acc.concat(val);
+          },[])
+      Util.joinCharacters(inlines,visitor)
       return visitor.visitInlines(
         {
-          children: items.reduce((acc,val)=>{ return acc.concat(val); },[]),
+          children: inlines,
         }
       );
     }
@@ -660,11 +665,14 @@ InlineLastCharPunctuation
     !{states.precededCharacterType = PRECEDED_CHARACTER_TYPES.PUNCTUATION}
     {return inline}
 InlineLastCharOther
-  = !( unicodeWhitespaceCharacter / asciiPunctuationCharacter )
-    t:TextualContent
+  = inline:(
+      GFMAutolink
+    / !( unicodeWhitespaceCharacter / asciiPunctuationCharacter )
+      t:TextualContent
+      {return t}
+    )
     !{states.precededCharacterType = PRECEDED_CHARACTER_TYPES.OTHER}
-    {return t}
-
+    {return inline}
 EscapeAndReference = BackslashEscape / EntityAndNumericReference
 
 // -------------------- BackslashEscape
@@ -916,7 +924,7 @@ LinkText
     / !(Link / [\[\]]) content:Inline {return content}
     )*
     ']'
-    { return Util.buildLinkText(items); }
+    { return Util.buildLinkText(items,visitor); }
 NestedBracketLinkText
   = &'[' start:TextualContent
     items:(
@@ -924,7 +932,7 @@ NestedBracketLinkText
     / !(Link / [\[\]]) content:Inline {return content}
     )*
     &']' end:TextualContent
-    { return Util.buildLinkText([start].concat(items,end)); }
+    { return Util.buildLinkText([start].concat(items,end),visitor); }
 LinkDestination
   = "<" 
     str:$(
@@ -1070,7 +1078,7 @@ ImageDescription
   = "!["
     desc:( !([\[\]]) content:Inline {return content} )*
     "]"
-    { return Util.buildImageDesc(desc); }
+    { return Util.buildImageDesc(desc,visitor); }
 // -------------------- Autolink
 Autolink = URIAutolink / EmailAutolink
 URIAutolink
@@ -1250,33 +1258,64 @@ UnicodePs = character:. &{ return Ps[character] }
 // ###############################################################
 // ####################### gfm extensions ########################
 // ###############################################################
-//GFMBlocks =
-
-GFMInlines
-  = GFMAutolink
-
 // -------------------- GFMStrikethrough
 
 // -------------------- GFMAutolink
 GFMAutolink
-  = ExtendedWWWAutolink / ExtendedURLAutolink/* / ExtendedEmailAutolink*/
+  = ( &{ return states.precededCharacterType === PRECEDED_CHARACTER_TYPES.PUNCTUATION }
+    / &{ return states.precededCharacterType === PRECEDED_CHARACTER_TYPES.WHITESPACE_AND_LINEENDING }
+    )
+    link:(ExtendedWWWAutolink / ExtendedURLAutolink/* / ExtendedEmailAutolink*/)
+    { return link }
 ExtendedWWWAutolink
-  = 'www'
+  = 'www.'
     domain:ValidDomain
-    follow:(
-      !(space
-      / lineEnding
-      / [?!.,:*_~] (space/lineEnding)
-     // / ')' (space/lineEnding) TODO
+    follow:$(!ExtendedAutolinkPathEndCondition .)*
+    last:(
+      ')'
+      &{ return follow}
+      !{ return (follow||'').match(/\(/) < (follow||'').match(/\)/)+1}
+      {return ')'}
+    )?
+    {
+      return visitor.visitAutolink(
+        {
+          type: NODE_TYPES.Autolink,
+          text: 'www.'+domain+(follow?follow:'')+(last?last:''),
+          content: '<'+'www.'+domain+(follow?follow:'')+(last?last:'')+'>',
+          linkType: AUTOLINK_TYPE.Uri,
+        }
       )
-      c:[^<]
-      {return c}
-    )+
+    }
 ExtendedURLAutolink
-  = ('http' / 'https' / 'ftp')
-    '://'
-    ValidDomain
-    // TODO
+  = scheme:$(('https'/'http'/'ftp') '://')
+    domain:ValidDomain
+    follow:$(!ExtendedAutolinkPathEndCondition .)*
+    last:(
+      ')'
+      &{ return follow}
+      !{ return (follow||'').match(/\(/) < (follow||'').match(/\)/)+1}
+      {return ')'}
+    )?
+    {
+      return visitor.visitAutolink(
+        {
+          type: NODE_TYPES.Autolink,
+          text: scheme+domain+(follow?follow:'')+(last?last:''),
+          content: '<'+scheme+domain+(follow?follow:'')+(last?last:'')+'>',
+          linkType: AUTOLINK_TYPE.Uri,
+        }
+      )
+    }
+ExtendedAutolinkPathEndCondition
+  = ( space
+    / lineEnding
+    / !.
+    / '<'
+    / [?!.,:*_~] (space/lineEnding/'<'/!.)
+    / ')' (space/lineEnding/'<'/!.)
+    / '&' [a-z0-9]i+ ';' (space/lineEnding/'<'/!.)
+    )
 /*ExtendedEmailAutolink // TODO
   = (alphanumeric/[._+-])+
     '@'
@@ -1284,9 +1323,12 @@ ExtendedURLAutolink
     '.'
     (  alphanumeric/[._-])+*/
 ValidDomain
-  = head:$([a-z]i/'_'/'-')+
+  = head:$([a-z0-9]i/'_'/'-')+
     '.'
-    inner:(s:$([a-z]i/'_'/'-')+ c:'.' {return s+c})+
-    last:$([a-z]i/'-')+
-    !{ return ( (!inner)&&/_/.test(head) )||( inner&&/_/.test(inner[inner.length-1]) ) }
-    {return head + inner.join('') + last}
+    inner:(
+      s:$([a-z0-9]i/'_'/'-')+ c:'.' &([a-z0-9]i/'_'/'-') {return s+c}
+    )*
+    last:$([a-z0-9]i/'-')+
+  //  !{ return ( (!inner)&&/_/.test(head) )||( inner&&/_/.test(inner[inner.length-1]) ) }
+
+    {return head +'.' + inner.join('') + last}

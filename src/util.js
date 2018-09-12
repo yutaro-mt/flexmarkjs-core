@@ -115,16 +115,19 @@ class Util {
     return stack.pop()
   }
 
-  static buildLinkText(items) {
+  static buildLinkText(items,visitor) {
     const arr = items.reduce((acc, val) => {
       return acc.concat(val)
     }, [])
+    Util.joinCharacters(arr,visitor)
     return arr
   }
-  static buildImageDesc(desc) {
-    return desc.reduce((acc, val) => {
+  static buildImageDesc(desc,visitor) {
+    const arr = desc.reduce((acc, val) => {
       return acc.concat(val)
     }, [])
+    Util.joinCharacters(arr,visitor)
+    return arr
   }
   static normalizeLinkLabel(origin) {
     return (
@@ -170,7 +173,37 @@ class Util {
     return !hasNestedLink
   }
 
-
+  static joinCharacters(inlineList,visitor){
+    let ranges = []
+    for(let i=0;i<inlineList.length;i++){
+      if(inlineList[i].type === NODE_TYPES.TextualContent) {
+        let start = i
+        for(;i<inlineList.length;i++){
+          if(inlineList[i].type !== NODE_TYPES.TextualContent){
+            ranges.push([start,i-1,inlineList.slice(start,i)])
+            break
+          }else if(i === inlineList.length-1){
+            ranges.push([start,i,inlineList.slice(start,i+1)])
+            break
+          }
+        }
+      }
+    }
+    ranges.reverse().forEach((v)=>{
+      inlineList.splice(
+        v[0],
+        v[1]-v[0]+1, 
+        visitor.visitText(
+          {
+            type: NODE_TYPES.Text,
+            text: v[2].reduce((acc,v)=>{ return acc+v.text},''),
+            content: v[2].reduce((acc,v)=>{ return acc+v.content},''),
+          }
+        )
+      )
+    })
+    return inlineList
+  }
   
   static isUnreadPrependingBQ(stack, currentPos){
     for(let i=currentPos;i<stack.length ;i++){

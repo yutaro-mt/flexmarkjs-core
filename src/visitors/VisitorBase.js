@@ -128,6 +128,10 @@ class VisitorBase {
     node.renderer = this.renderer.textualContent
     return node
   }
+  visitText(node) {
+    node.renderer = this.renderer.text
+    return node
+  }
 }
 
 module.exports = VisitorBase

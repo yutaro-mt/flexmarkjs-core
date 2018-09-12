@@ -26,6 +26,7 @@ const NODE_TYPES = {
   HardLineBreak: 111,
   SoftLineBreak: 112,
   TextualContent: 113,
+  Text:114,
 }
 
 module.exports = NODE_TYPES
