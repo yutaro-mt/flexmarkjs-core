@@ -1269,43 +1269,41 @@ GFMAutolink
     { return link }
 ExtendedWWWAutolink
   = 'www.'
-    domain:ValidDomain
-    follow:$(!ExtendedAutolinkPathEndCondition .)*
-    last:(
-      ')'
-      &{ return follow}
-      !{ return (follow||'').match(/\(/) < (follow||'').match(/\)/)+1}
-      {return ')'}
-    )?
+    link:ExtendedURLAndWWWAutolinkCommon
     {
       return visitor.visitAutolink(
         {
           type: NODE_TYPES.Autolink,
-          text: 'www.'+domain+(follow?follow:'')+(last?last:''),
-          content: '<'+'www.'+domain+(follow?follow:'')+(last?last:'')+'>',
+          text: 'www.'+link.text,
+          content: '<'+'www.'+link.text+'>',
           linkType: AUTOLINK_TYPE.Uri,
         }
       )
     }
 ExtendedURLAutolink
   = scheme:$(('https'/'http'/'ftp') '://')
-    domain:ValidDomain
-    follow:$(!ExtendedAutolinkPathEndCondition .)*
-    last:(
-      ')'
-      &{ return follow}
-      !{ return (follow||'').match(/\(/) < (follow||'').match(/\)/)+1}
-      {return ')'}
-    )?
+    link:ExtendedURLAndWWWAutolinkCommon
     {
       return visitor.visitAutolink(
         {
           type: NODE_TYPES.Autolink,
-          text: scheme+domain+(follow?follow:'')+(last?last:''),
-          content: '<'+scheme+domain+(follow?follow:'')+(last?last:'')+'>',
+          text: scheme+link.text,
+          content: '<'+scheme+link.text+'>',
           linkType: AUTOLINK_TYPE.Uri,
         }
       )
+    }
+ExtendedURLAndWWWAutolinkCommon
+  = domain:ValidDomain
+    follow:$(!ExtendedAutolinkPathEndCondition .)*
+    last:(
+      ')'
+      &{ return follow} 
+      !{ return ((follow||'').match(/\(/gm)||[]).length < ((follow||'').match(/\)/gm)||[]).length+1}
+      {return ')'}
+    )?
+    {
+      return {domain, follow, last, text: domain+(follow?follow:'')+(last?last:'')}
     }
 ExtendedAutolinkPathEndCondition
   = ( space

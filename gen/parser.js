@@ -909,31 +909,31 @@ function(str) {return /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0
     function(character) { return Po[character] },
     function(character) { return Ps[character] },
     function(link) { return link },
-    function(domain, follow) { return follow},
-    function(domain, follow) { return (follow||'').match(/\(/) < (follow||'').match(/\)/)+1},
-    function(domain, follow) {return ')'},
-    function(domain, follow, last) {
+    function(link) {
           return visitor.visitAutolink(
             {
               type: NODE_TYPES.Autolink,
-              text: 'www.'+domain+(follow?follow:'')+(last?last:''),
-              content: '<'+'www.'+domain+(follow?follow:'')+(last?last:'')+'>',
+              text: 'www.'+link.text,
+              content: '<'+'www.'+link.text+'>',
               linkType: AUTOLINK_TYPE.Uri,
             }
           )
         },
-    function(scheme, domain, follow) { return follow},
-    function(scheme, domain, follow) { return (follow||'').match(/\(/) < (follow||'').match(/\)/)+1},
-    function(scheme, domain, follow) {return ')'},
-    function(scheme, domain, follow, last) {
+    function(scheme, link) {
           return visitor.visitAutolink(
             {
               type: NODE_TYPES.Autolink,
-              text: scheme+domain+(follow?follow:'')+(last?last:''),
-              content: '<'+scheme+domain+(follow?follow:'')+(last?last:'')+'>',
+              text: scheme+link.text,
+              content: '<'+scheme+link.text+'>',
               linkType: AUTOLINK_TYPE.Uri,
             }
           )
+        },
+    function(domain, follow) { return follow},
+    function(domain, follow) { return ((follow||'').match(/\(/gm)||[]).length < ((follow||'').match(/\)/gm)||[]).length+1},
+    function(domain, follow) {return ')'},
+    function(domain, follow, last) {
+          return {domain, follow, last, text: domain+(follow?follow:'')+(last?last:'')}
         },
     function(head, s, c) {return s+c},
     function(head, inner, last) {return head +'.' + inner.join('') + last}
@@ -1096,10 +1096,11 @@ peg$decode("%7)2(\"!6(#/\xB7#%$%%F;\xAE.# &;\xA8G!.##&&!&'#/@#%;c.* &7\x884'\"!5
     peg$decode("%7#1\"!5!#/7#9:\xF5 ! -\"\"&!&#/#$+\")(\"'#&'#"),
     peg$decode("%7#1\"!5!#/7#9:\xF6 ! -\"\"&!&#/#$+\")(\"'#&'#"),
     peg$decode("%9:\xA3  -\"\"&!&#.- &9:\xA4  -\"\"&!&#/6#;\xBC.# &;\xBD/'$8\":\xF7#! (\"'#&'#"),
-    peg$decode("%7\xA32\x8D\"!6\x8D#/\xD1#;\xBF/\xC8$%$%%F;\xBEG!.##&&!&'#/2#7#1\"!5!#/#$+\")(\"'#&'#0I*%%F;\xBEG!.##&&!&'#/2#7#1\"!5!#/#$+\")(\"'#&'#&&,%7\x852~\"!6~#/R#9:\xF8 \"#\"-\"\"&!&#/=$9:\xF9 \"$#-\"\"&#&!/($8#:\xFA$\"%$(#'#(\"'#&'#.\" &\"8$:\xFB%#\"! (\"'#&'#"),
-    peg$decode("%%%7\xA42\x8E\"!6\x8E#.7 &7\xA52\x8F\"!6\x8F#.* &7\xA62\x90\"!6\x90#/3#7\xA72\x91\"!6\x91#/#$+\")(\"'#&'#/\"!&,)/\xD5#;\xBF/\xCC$%$%%F;\xBEG!.##&&!&'#/2#7#1\"!5!#/#$+\")(\"'#&'#0I*%%F;\xBEG!.##&&!&'#/2#7#1\"!5!#/#$+\")(\"'#&'#&&,%7\x852~\"!6~#/U#9:\xFC #$#\"-\"\"&!&#/?$9:\xFD #%$#-\"\"&#&!/)$8#:\xFE$#&%$(#'#(\"'#&'#.\" &\"8$:\xFF%$#\"! (\"'#&'#"),
+    peg$decode("%7\xA32\x8D\"!6\x8D#/0#;\xBE/'$8\":\xF8#! (\"'#&'#"),
+    peg$decode("%%%7\xA42\x8E\"!6\x8E#.7 &7\xA52\x8F\"!6\x8F#.* &7\xA62\x90\"!6\x90#/3#7\xA72\x91\"!6\x91#/#$+\")(\"'#&'#/\"!&,)/1#;\xBE/($8\":\xF9#\"! (\"'#&'#"),
+    peg$decode("%;\xC0/\xC8#%$%%F;\xBFG!.##&&!&'#/2#7#1\"!5!#/#$+\")(\"'#&'#0I*%%F;\xBFG!.##&&!&'#/2#7#1\"!5!#/#$+\")(\"'#&'#&&,%7\x852~\"!6~#/R#9:\xFA \"#\"-\"\"&!&#/=$9:\xFB \"$#-\"\"&#&!/($8#:\xFC$\"%$(#'#(\"'#&'#.\" &\"8#:\xFD$#\"! &'#"),
     peg$decode(";\xAE.\u0161 &;\xA8.\u015B &%F7#1\"!5!#G!.##&&!&'#.\u0142 &7)2(\"!6(#.\u0135 &%7\xA845\"!5!#/X#;\xAE.I &;\xA8.C &7)2(\"!6(#.6 &%F7#1\"!5!#G!.##&&!&'#/#$+\")(\"'#&'#.\xE9 &%7\x852~\"!6~#/X#;\xAE.I &;\xA8.C &7)2(\"!6(#.6 &%F7#1\"!5!#G!.##&&!&'#/#$+\")(\"'#&'#.\x9D &%7}2x\"!6x#/\x8C#$7\xA946\"!5!#/-#0**7\xA946\"!5!#&&&#/h$7~2y\"!6y#/X$;\xAE.I &;\xA8.C &7)2(\"!6(#.6 &%F7#1\"!5!#G!.##&&!&'#/#$+$)($'#(#'#(\"'#&'#"),
-    peg$decode("%%$7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #/G#0D*7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #&&&#/\"!&,)/\u01E1#7\xAA2\x92\"!6\x92#/\u01D1$$%%$7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #/G#0D*7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #&&&#/\"!&,)/p#7\xAA2\x92\"!6\x92#/`$%F7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #G /##&'!&&#/)$8#:\u0100$#&\"!(#'#(\"'#&'#0\xD0*%%$7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #/G#0D*7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #&&&#/\"!&,)/p#7\xAA2\x92\"!6\x92#/`$%F7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #G /##&'!&&#/)$8#:\u0100$#&\"!(#'#(\"'#&'#&%$7\xA946\"!5!#.* &7 2 \"!6 #/:#07*7\xA946\"!5!#.* &7 2 \"!6 #&&&#/\"!&,)/)$8$:\u0101%##! ($'#(\"'#&'#")
+    peg$decode("%%$7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #/G#0D*7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #&&&#/\"!&,)/\u01E1#7\xAA2\x92\"!6\x92#/\u01D1$$%%$7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #/G#0D*7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #&&&#/\"!&,)/p#7\xAA2\x92\"!6\x92#/`$%F7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #G /##&'!&&#/)$8#:\xFE$#&\"!(#'#(\"'#&'#0\xD0*%%$7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #/G#0D*7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #&&&#/\"!&,)/p#7\xAA2\x92\"!6\x92#/`$%F7\xA946\"!5!#.7 &7!2!\"!6!#.* &7 2 \"!6 #G /##&'!&&#/)$8#:\xFE$#&\"!(#'#(\"'#&'#&%$7\xA946\"!5!#.* &7 2 \"!6 #/:#07*7\xA946\"!5!#.* &7 2 \"!6 #&&&#/\"!&,)/)$8$:\xFF%##! ($'#(\"'#&'#")
   ];
 
   var peg$currPos = 0;
